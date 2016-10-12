@@ -85,7 +85,7 @@ function createFrame(x, y, w, h, title, style, parent)
 		style 				or wx.wxDEFAULT_FRAME_STYLE
 	)
 	
-	frame:Show(true)
+	--frame:Show(true)
 
 	return frame, id
 end
@@ -453,3 +453,4 @@ function centerElement(element) return element:Centre() end
 
 --Запустить приложение
 function runApplication() return wx.wxGetApp():MainLoop() end
+function closeApplication() return wx.wxGetApp():Exit() end

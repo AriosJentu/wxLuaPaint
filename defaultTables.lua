@@ -217,3 +217,23 @@ function fromRGBToHEX(r, g, b, a)
 			string.format("%.2x%.2x%.2x", r, g, b)
 	end
 end
+function randomHex(alphat)
+	if alphat then
+
+		return 
+			string.format("%.2x%.2x%.2x%.2x", 
+				math.random(0, 255), 
+				math.random(0, 255), 
+				math.random(0, 255), 
+				math.random(0, 255)
+			)
+	else
+		return 
+			string.format("%.2x%.2x%.2x", 
+				math.random(0, 255), 
+				math.random(0, 255), 
+				math.random(0, 255)
+			)
+	end
+
+end
