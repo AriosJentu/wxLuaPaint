@@ -35,6 +35,7 @@ function getType(element)
 	elseif name:find("wxTextCtrl") 		then typs = "edit"
 	elseif name:find("wxFrame") 		then typs = "frame"
 	elseif name:find("wxPaintDC") 		then typs = "paint"
+	elseif name:find("wxSpinCtrl")		then typs = "spin"
 
 	else --В противном случае вернуть тип элемента
 		typs = type(element) 
@@ -236,6 +237,31 @@ function createPanel(x, y, w, h, parent)
 	return panel, id
 end
 
+function createSpin(x, y, w, h, val, parent, min, max)
+
+	--Если нет родительского элемента, то не создавать поле
+	if not parent then 
+		print("Error with CREATING EDIT: needs parent")
+		return false 
+	end
+
+	--Создание
+	local id = wx.wxID_ANY
+
+	local spin = wx.wxSpinCtrl(
+		parent, 
+		id, 
+		tostring(val) or "0",
+		wx.wxPoint(x, y) 	or wx.wxDefaultPosition, 
+		wx.wxSize(w, h) 	or wx.wxDefaultSize, 
+		wx.wxSP_ARROW_KEYS,
+		tonumber(min) or 0,
+		tonumber(max) or 255
+	)
+
+	return spin, id
+end
+
 ------------------------------------------------------------
 --============= ФУНКЦИИ УСТАНОВКИ ПАРАМЕТРОВ =============--
 ------------------------------------------------------------
@@ -294,9 +320,9 @@ end
 
 --Установка текста элементу
 function setText(element, text) 
-	if getType(element) == "edit" then
+	if getType(element) == "edit" or getType(element) == "spin" then
 		--Для поля ввода своя функция 
-		return element:SetValue(tostring(text)), element:SetInsertionPoint(element:GetValue():len())
+		return element:SetValue(tostring(text)), (getType(element) == "edit" and element:SetInsertionPoint(element:GetValue():len()) or nil)
 	else 
 		--Для других - своя
 		return element:SetLabel(tostring(text)) 
@@ -363,7 +389,7 @@ end
 --Получение текста от элемента
 function getText(element) 
 	--Аналогично функции выше
-	if getType(element) == "edit" then
+	if getType(element) == "edit" or getType(element) == "spin" then
 		--У эдитбокса своя 
 		return element:GetValue()
 	else 
@@ -387,7 +413,10 @@ end
 --Функция по переводу текстового названия события в числовой
 function getEventID(element, name, key)
 
-	name = tonumber(tableOfEvents[name]) or tonumber(tableOfEvents[name][key or "left" or "up"]) or nil
+	name = 
+		tonumber(tableOfEvents[name]) or 
+		tonumber(tableOfEvents[name][key or "left" or "up"]) or 
+		nil
 	return name
 
 end

@@ -135,6 +135,20 @@ addEvent(PaletteButton, "onMouseLeave", function()
 	setColor(PaletteButton, "444444", "FFFFFF")
 end)
 
+addEvent(SaveButton, "onMouseEnter", function()
+	setColor(SaveButton, "C01818", "FFFFFF")
+end)
+addEvent(SaveButton, "onMouseLeave", function()
+	setColor(SaveButton, "18C018", "FFFFFF")
+end)
+addEvent(SaveButton, "onMouseUp", function() 
+	ColorFrame:Close() 
+	
+	DefaultColour 		= getText(HexEdit)
+	DefaultBrushSize 	= getText(SpinBrush) 
+end)
+
+
 addEvent(MouseButton, "onMouseEnter", function()
 	setColor(MouseButton, "C01818", "FFFFFF")
 end)
@@ -147,6 +161,12 @@ addEvent(MouseButton, "onMouseUp", function()
 	isMouse = not isMouse
 	setColor(MouseButton, isMouse and "18C018" or "444444", "FFFFFF")
 end)
+
+addEvent(MouseButton, "onMouseUp", function()
+	isMouse = not isMouse
+	setColor(MouseButton, isMouse and "18C018" or "444444", "FFFFFF")
+end)
+
 
 --При закрытии окна палитры, окно просто свернуть, а не закрыть
 addEvent(ColorFrame, "onClose", function() ColorFrame:Hide() end)
@@ -172,7 +192,50 @@ addEvent(PaintFrame, "onKey", function(keys)
 	end
 end)
 
+--Цикл по полям ввода цвета
+for _, v in pairs({SpinRed, SpinGreen, SpinBlue}) do
 
+	--Событие на редактирование Spin
+	addEvent(v, "onSpinEdit", function(evt)
+
+		--Получение цветов
+		local r, g, b = getText(SpinRed), getText(SpinGreen), getText(SpinBlue)
+		local color = fromRGBToHEX(r, g, b)
+		
+		--Установка HEX цвета
+		setColor(ColorMonitor, color, color)
+		setText(HexEdit, color)
+	end)
+
+end
+
+addEvent(HexEdit, "onEdit", function(evt)
+	
+	local text = getText(HexEdit)
+	--[[for i = 0, 6-text:len() do
+		text = "0"..text
+	end]]
+	if text:len() > 6 then setText(HexEdit, text:sub(2, text:len() ) ) end
+	if text:len() < 6 then setText(HexEdit, "0"..text) end
+	if not tonumber(text, 16) then 
+		setText(HexEdit, fromRGBToHEX(
+			getText(SpinRed), 
+			getText(SpinGreen), 
+			getText(SpinBlue)
+			)
+		) 
+	end
+
+	local color 	= getText(HexEdit)
+	local r, g, b 	= fromHEXToRGB(color)
+
+	setText(SpinRed, 	r)
+	setText(SpinGreen,	g)
+	setText(SpinBlue, 	b)
+
+	--Установка HEX цвета
+	setColor(ColorMonitor, color, color)
+end)
 
 --============================================--
 --============= ФУНКЦИИ ВЕКТОРОВ =============--

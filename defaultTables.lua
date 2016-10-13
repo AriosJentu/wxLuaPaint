@@ -110,40 +110,42 @@ tableChars = {
 
 --Таблица событий
 tableOfEvents = {
-	["onMove"] 		= wx.wxEVT_MOVE,
-	["onResize"] 	= wx.wxEVT_SIZE,
-	["onClose"] 	= wx.wxEVT_CLOSE_WINDOW,
-	["onActivate"] 	= wx.wxEVT_ACTIVATE,
-	["onKey"] 		= wx.wxEVT_CHAR_HOOK,
-	["onClick"] 	= wx.wxEVT_COMMAND_BUTTON_CLICKED,
-	["onMenu"]		= wx.wxEVT_COMMAND_MENU_SELECTED,
-	["onMouseMove"] = wx.wxEVT_MOTION,
+	["onMove"] 		= wx.wxEVT_MOVE							,
+	["onEdit"]		= wx.wxEVT_COMMAND_TEXT_UPDATED			,
+	["onResize"] 	= wx.wxEVT_SIZE							,
+	["onClose"] 	= wx.wxEVT_CLOSE_WINDOW					,
+	["onActivate"] 	= wx.wxEVT_ACTIVATE						,
+	["onKey"] 		= wx.wxEVT_CHAR_HOOK					,
+	["onClick"] 	= wx.wxEVT_COMMAND_BUTTON_CLICKED		,
+	["onMenu"]		= wx.wxEVT_COMMAND_MENU_SELECTED		,
+	["onMouseMove"] = wx.wxEVT_MOTION						,
+	["onSpinEdit"]	= wx.wxEVT_COMMAND_SPINCTRL_UPDATED		,
 	["onMouseDown"] = 
 	{
-		["left"]	= wx.wxEVT_LEFT_DOWN, 
-		["right"] 	= wx.wxEVT_RIGHT_DOWN, 
+		["left"]	= wx.wxEVT_LEFT_DOWN		, 
+		["right"] 	= wx.wxEVT_RIGHT_DOWN		, 
 		["middle"]	= wx.wxEVT_MIDDLE_DOWN
-	},	
+	}														,	
 	["onMouseUp"] 	= 
 	{
-		["left"]	= wx.wxEVT_LEFT_UP, 
-		["right"]	= wx.wxEVT_RIGHT_UP, 
+		["left"]	= wx.wxEVT_LEFT_UP			, 
+		["right"]	= wx.wxEVT_RIGHT_UP			, 
 		["middle"]	= wx.wxEVT_MIDDLE_UP
-	},
+	}														,
 	["onMouseDoubleClick"] = 
 	{
-		["left"] 	= wx.wxEVT_LEFT_DCLICK, 
-		["right"] 	= wx.wxEVT_RIGHT_DCLICK, 
+		["left"] 	= wx.wxEVT_LEFT_DCLICK					, 
+		["right"] 	= wx.wxEVT_RIGHT_DCLICK					, 
 		["middle"]	= wx.wxEVT_MIDDLE_DCLICK
-	},
-	["onMouseEnter"]= wx.wxEVT_ENTER_WINDOW,
-	["onMouseLeave"]= wx.wxEVT_LEAVE_WINDOW,
+	}														,
+	["onMouseEnter"]= wx.wxEVT_ENTER_WINDOW		,
+	["onMouseLeave"]= wx.wxEVT_LEAVE_WINDOW		,
 	["onWheel"] 	= 
 	{
-		["up"] 		= wx.wxEVT_SCROLL_LINEUP,
+		["up"] 		= wx.wxEVT_SCROLL_LINEUP	,
 		["down"]	= wx.wxEVT_SCROLL_LINEDOWN
-	},
-	["onShows"] 	= wx.wxEVT_SHOW,
+	}														,
+	["onShows"] 	= wx.wxEVT_SHOW				,
 	["onPaint"] 	= wx.wxEVT_PAINT 
 
 }
