@@ -112,7 +112,11 @@ tableChars = {
 tableOfEvents = {
 	["onMove"] 		= wx.wxEVT_MOVE							,
 	["onEdit"]		= wx.wxEVT_COMMAND_TEXT_UPDATED			,
-	["onResize"] 	= wx.wxEVT_SIZE							,
+	["onResize"] 	= {
+		["resize"] 	= wx.wxEVT_SIZE							,
+		["max"] 	= wx.wxEVT_MAXIMIZE						,
+		["all"]		= "onResize"
+	}													,
 	["onClose"] 	= wx.wxEVT_CLOSE_WINDOW					,
 	["onActivate"] 	= wx.wxEVT_ACTIVATE						,
 	["onKey"] 		= wx.wxEVT_CHAR_HOOK					,
@@ -122,21 +126,24 @@ tableOfEvents = {
 	["onSpinEdit"]	= wx.wxEVT_COMMAND_SPINCTRL_UPDATED		,
 	["onMouseDown"] = 
 	{
-		["left"]	= wx.wxEVT_LEFT_DOWN		, 
-		["right"] 	= wx.wxEVT_RIGHT_DOWN		, 
-		["middle"]	= wx.wxEVT_MIDDLE_DOWN
+		["left"]	= wx.wxEVT_LEFT_DOWN						, 
+		["right"] 	= wx.wxEVT_RIGHT_DOWN						, 
+		["middle"]	= wx.wxEVT_MIDDLE_DOWN						,
+		["all"]		= "onMouseDown"								
 	}														,	
 	["onMouseUp"] 	= 
 	{
-		["left"]	= wx.wxEVT_LEFT_UP			, 
-		["right"]	= wx.wxEVT_RIGHT_UP			, 
-		["middle"]	= wx.wxEVT_MIDDLE_UP
+		["left"]	= wx.wxEVT_LEFT_UP							, 
+		["right"]	= wx.wxEVT_RIGHT_UP							,  
+		["middle"]	= wx.wxEVT_MIDDLE_UP						,
+		["all"]		= "onMouseUp"						
 	}														,
 	["onMouseDoubleClick"] = 
 	{
-		["left"] 	= wx.wxEVT_LEFT_DCLICK					, 
-		["right"] 	= wx.wxEVT_RIGHT_DCLICK					, 
-		["middle"]	= wx.wxEVT_MIDDLE_DCLICK
+		["left"] 	= wx.wxEVT_LEFT_DCLICK						, 
+		["right"]	= wx.wxEVT_RIGHT_DCLICK						,  
+		["middle"]	= wx.wxEVT_MIDDLE_DCLICK					,
+		["all"]		= "onMouseDoubleClick"				
 	}														,
 	["onMouseEnter"]= wx.wxEVT_ENTER_WINDOW		,
 	["onMouseLeave"]= wx.wxEVT_LEAVE_WINDOW		,
@@ -213,10 +220,10 @@ end
 function fromRGBToHEX(r, g, b, a)
 	if a then
 		return 
-			string.format("%.2x%.2x%.2x%.2x", a, r, g, b)
+			string.format("%.2x%.2x%.2x%.2x", a or 0, r or 0, g or 0, b or 0)
 	else
 		return 
-			string.format("%.2x%.2x%.2x", r, g, b)
+			string.format("%.2x%.2x%.2x", r or 0, g or 0, b or 0)
 	end
 end
 function randomHex(alphat)

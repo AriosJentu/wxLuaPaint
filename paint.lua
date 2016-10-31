@@ -1,3 +1,13 @@
+infoText = [[
+Автор: 				Максимов Павел (Б8103а)
+Известен как: 		Arios Jentu
+Начало работы: 	12.10.2016
+
+GitHub: 			github.com/AriosJentu
+VK: 				vk.com/AriosJentu
+
+Проект распространяется свободно]]
+
 --Директория пакетов
 package.cpath = package.cpath..";./?.dll;./?.so;../lib/?.so;../lib/vc_dll/?.dll;../lib/bcc_dll/?.dll;../lib/mingw_dll/?.dll;"
 --Запуск модуля WXWidgets
@@ -13,9 +23,12 @@ dofile(APPDIR.."defaultTables.lua")
 dofile(APPDIR.."frameLibrary.lua")
 --3) Библиотека функций по рисованию
 dofile(APPDIR.."drawLibrary.lua")
+--5) Библиотека функций по работе с кистями
+dofile(APPDIR.."brushUtils.lua")
+
 --4) Окно приложения
 dofile(APPDIR.."gui.lua")
---5) События для окна
+--6) События для окна
 dofile(APPDIR.."events.lua")
 
 

@@ -36,6 +36,7 @@ function getType(element)
 	elseif name:find("wxFrame") 		then typs = "frame"
 	elseif name:find("wxPaintDC") 		then typs = "paint"
 	elseif name:find("wxSpinCtrl")		then typs = "spin"
+	elseif name:find("wxColourDialog")	then typs = "coldiag"
 
 	else --В противном случае вернуть тип элемента
 		typs = type(element) 
@@ -83,7 +84,7 @@ function createFrame(x, y, w, h, title, style, parent)
 		tostring(title), 
 		wx.wxPoint(x, y) 	or wx.wxDefaultPosition, 
 		wx.wxSize(w, h) 	or wx.wxDefaultSize, 
-		style 				or wx.wxDEFAULT_FRAME_STYLE
+		style 				or wx.wxDefault_FRAME_STYLE
 	)
 	
 	--frame:Show(true)
@@ -115,6 +116,32 @@ function createButton(x, y, w, h, title, style, parent)
 	--Вернуть кнопку
 	return button, id
 end
+
+--Создание кнопки
+function createIconButton(x, y, w, h, iconDir, style, parent)
+
+	--Если нет родительского элемента, то не создавать кнопку
+	if not parent then 
+		print("Error with CREATING BUTTON: needs parent")
+		return false 
+	end
+
+	--Создать кнопку
+	local id = wx.wxID_ANY
+
+	local button = wx.wxBitmapButton(
+		parent, 
+		id, 
+		wx.wxBitmap(iconDir), 
+		wx.wxPoint(x, y) 	or wx.wxDefaultPosition, 
+		wx.wxSize(w, h) 	or wx.wxDefaultSize, 
+		style 				or wx.wxBU_AUTODRAW
+	)
+	
+	--Вернуть кнопку
+	return button, id
+end
+
 
 --Создание текстового поля
 function createEdit(x, y, w, h, text, style, parent)
@@ -241,7 +268,7 @@ function createSpin(x, y, w, h, val, parent, min, max)
 
 	--Если нет родительского элемента, то не создавать поле
 	if not parent then 
-		print("Error with CREATING EDIT: needs parent")
+		print("Error with CREATING SPIN: needs parent")
 		return false 
 	end
 
@@ -260,6 +287,41 @@ function createSpin(x, y, w, h, val, parent, min, max)
 	)
 
 	return spin, id
+end
+
+function createColorButton(x, y, w, h, color, style, parent)
+
+	--Если нет родительского элемента, то не создавать поле
+	if not parent then 
+		print("Error with CREATING COLOR BUTTON: needs parent")
+		return false 
+	end
+
+	--Создание
+	local id = wx.wxID_ANY
+
+	local colpic = wx.wxColourPickerCtrl(
+		parent, 
+		id, 
+		wx.wxColour(fromHEXToRGB(color)) or wx.wxColour(fromHEXToRGB("000000")),
+		wx.wxPoint(x, y) 	or wx.wxDefaultPosition, 
+		wx.wxSize(w, h) 	or wx.wxDefaultSize, 
+		wx.wxCLRP_DEFAULT_STYLE
+	)
+
+	return colpic, id
+end
+
+function createColorDialog(parent, data)
+	--Если нет родительского элемента, то не создавать поле
+	if not parent then 
+		print("Error with CREATING COLOR BUTTON: needs parent")
+		return false 
+	end
+
+	local coldiag = wx.wxColourDialog(parent, data)
+
+	return coldiag
 end
 
 ------------------------------------------------------------
@@ -293,7 +355,7 @@ function setFont(element, name, size, fam, style, weig, ulin)
 	elseif fam == "mono" 	then fam = wx.wxFONTFAMILY_TELETYPE		--Стиль моношрифта 
 	elseif fam == "max" 	then fam = wx.wxFONTFAMILY_MAX			--Смесь стилей
 
-	else fam = wx.wxFONTFAMILY_DEFAULT end 							--Стандартный (regular)
+	else fam = wx.wxFONTFAMILY_Current end 							--Стандартный (regular)
 
 	--Стиль шрифта
 	if style == "italic" 	then style = wx.wxFONTSTYLE_ITALIC		--Шрифт с наклоном
@@ -363,6 +425,25 @@ function getIcon(iconDir) return wx.wxIcon(iconDir, 0) end
 --Функция получения альфаканала
 function getAlpha(element) return elementAlpha[element] or 1 end
 
+function getColFromColour(colour, ishex)
+	
+	local color = colour:GetAsString()
+
+	color = nonRGBCol(color)
+
+	color = (( color:sub(1, -2) ):gsub("rgb", ""):gsub("a", ""):gsub(",", "") ):sub(2, -1)
+	
+	--print(getColor)
+	local zap1, zap2, zap3 = color:match("(%d+) (%d+) (%d+)")
+	
+	if not ishex then 
+		--То вернёт три числа
+		return tonumber(zap1), tonumber(zap2), tonumber(zap3)
+	else
+		return string.format("%.2x%.2x%.2x", tonumber(zap1), tonumber(zap2), tonumber(zap3))
+	end
+end
+
 --Получение цвета
 function getColor(element, typ, ishex)
 	--typ - true для получения цвета текста/передней части элемента, 
@@ -372,8 +453,10 @@ function getColor(element, typ, ishex)
 	local color = tostring(element:GetBackgroundColour():GetAsString())
 	if typ then color = tostring(element:GetForegroundColour():GetAsString()) end
 
+	color = nonRGBCol(color)
+
 	color = (( color:sub(1, -2) ):gsub("rgb", ""):gsub("a", ""):gsub(",", "") ):sub(2, -1)
-	
+
 	--print(getColor)
 	local zap1, zap2, zap3 = color:match("(%d+) (%d+) (%d+)")
 	
@@ -385,6 +468,20 @@ function getColor(element, typ, ishex)
 		return string.format("%.2x%.2x%.2x", tonumber(zap1), tonumber(zap2), tonumber(zap3))
 	end
 
+end
+function nonRGBCol(color)
+
+	if tostring(color) == "white" then color = "rgb(255, 255, 255)"
+	elseif tostring(color) == "black" then color = "rgb(0, 0, 0)" 
+	elseif tostring(color) == "red" then color = "rgb(255, 0, 0)" 
+	elseif tostring(color) == "yellow" then color = "rgb(255, 255, 0)"
+	elseif tostring(color) == "blue" then color = "rgb(0, 0, 255)"
+	elseif tostring(color) == "green" then color = "rgb(0, 255, 0)"
+	elseif tostring(color) == "brown" then color = "rgb(165, 42, 42)"
+	elseif tostring(color) == "pink" then color = "rgb(255, 192, 203)"
+	end
+
+	return color
 end
 --Получение текста от элемента
 function getText(element) 
@@ -404,6 +501,9 @@ function getEventSizes(evt) return evt:GetClientSizeWH() end
 function getSize(sizes)
 	return sizes:GetWidth(), sizes:GetHeight()
 end
+function getPositions(sizes)
+	return sizes:GetPositionXY()
+end
 
 
 --------------------------------------------------------------
@@ -415,8 +515,8 @@ function getEventID(element, name, key)
 
 	name = 
 		tonumber(tableOfEvents[name]) or 
-		tonumber(tableOfEvents[name][key or "left" or "up"]) or 
-		nil
+		tonumber(tableOfEvents[name][key or "all" or "up"]) or 
+		tostring(tableOfEvents[name][key or "all" or "up"]) or nil
 	return name
 
 end
@@ -424,6 +524,7 @@ end
 --Функция по созданию события
 function addEvent(element, name, funct, key)
 
+	--print(name)
 	--Если нет элемента, то не делать ничего
 	if not element then 
 		print("Error with EVENT HANDLING: needs element")
@@ -431,9 +532,27 @@ function addEvent(element, name, funct, key)
 	end
 
 	local id = wx.wxID_ANY
-	if name == "onMenu" then id = key end	
+
+	if name == "onMenu" or getType(element) == "coldiag" then id = key end	
+	if tostring(name) == "onMouseDown" or tostring(name) == "onMouseUp" or tostring(name) == "onMouseDoubleClick" or tostring(name) == "onResize" then
+		if not key then key = "all" end
+	else
+		if not key then key = "up" end
+	end
+
 	--Получаем номер события через название
 	name = getEventID(element, name, key)
+
+	if tostring(name) == "onMouseDown" or tostring(name) == "onMouseUp" or tostring(name) == "onMouseDoubleClick" then
+		element:Connect(id, tableOfEvents[name].right, function(evt) funct(evt, "right") end)
+		element:Connect(id, tableOfEvents[name].middle, function(evt) funct(evt, "middle") end)
+		name = tableOfEvents[name].left
+
+	elseif tostring(name) == "onResize" then
+		element:Connect(id, tableOfEvents[name].max, function(evt) funct(evt, "max") end)
+		name = tableOfEvents[name].resize
+
+	end
 
 	--Если события не существует
 	if not tonumber(name) then 
@@ -441,14 +560,15 @@ function addEvent(element, name, funct, key)
 		return false 
 	end
 
-	local ret = element:Connect(id, name, funct)
+	local evs = tostring(name) == "onResize" and "max" or "left"
+	element:Connect(id, name, function(evt) funct(evt, key == "all" and evs or key) end)
 	
 	if funTab[element] == nil then funTab[element] = {} end
 	funTab[element][name] = funct
 end
 
 --Функция по вызову созданного события
-function executeEvent(element, name, key)
+function executeEvent(element, name, key, but)
 
 	--Получаем ID события по имени
 	local oldName = name --Сохраним для ошибки
@@ -469,7 +589,7 @@ function executeEvent(element, name, key)
 	end
 
 	--исполняем функцию события
-	funTab[element][name](key)
+	funTab[element][name](key, but)
 end
 
 
@@ -480,6 +600,22 @@ end
 --Отцентровка элемента
 function centerElement(element) return element:Centre() end
 
+--Помещение окна вперёд
+function bringToFront(element)
+	if getType(element) == "frame" then
+		element:Iconize(false)
+		element:SetFocus()
+		element:Raise()
+	end
+end
+
 --Запустить приложение
 function runApplication() return wx.wxGetApp():MainLoop() end
 function closeApplication() return wx.wxGetApp():Exit() end
+
+function getScreenSize()
+	x, y = getSize( wx.wxDisplay():GetGeometry():GetSize() )
+	return x, y
+end
+
+--print(getScreenSize())

@@ -1,340 +1,289 @@
-local infoText = [[
-Автор: 				Максимов Павел (Б8103а)
-Известен как: 		Arios Jentu
-Начало работы: 	12.10.2016
+local SavingCoordinates 	= {} 	
+local SavePainted 			= {}
 
-GitHub: 			github.com/AriosJentu
-VK: 				vk.com/AriosJentu
+local IsDrawing 			= false	
+local IsMouseActive			= false	
 
-Проект распространяется свободно]]
+local CurrentToolSize = 1		
 
-local SavingCoordinates = {} 	--Таблица с сохраняющими координатами
-local SavingPaint = {}			--Таблица с сохранением истории рисования
-local Drawing = false			--Переменная рисования. True - когда нужно рисовать
-local isMouse = false 			--Переменная, отвечающая за векторное перемещение (инструмент "Мышь")
+local ObjectTable 	= {}		
 
-local DefaultColour = "000000"	--Цвет кисти по умолчанию
-local DefaultBrushSize = 2		--Размер кисти по умолчанию
+addEvent(SideButton.Mouse, "onMouseDown", function()
+	IsMouseActive = not IsMouseActive
+	setColor(SideButton.Mouse, IsMouseActive and "18C018" or "444444", "FFFFFF")
+end)
+addEvent(SideButton.Mouse, "onMouseLeave", function()
+	setColor(SideButton.Mouse, IsMouseActive and "18C018" or "444444", "FFFFFF")
+end)
 
-local ObjectTable = {}			--Таблица объектов - хранит в себе отрезок из таблицы истории, в котором лежит данный объект
+addEvent(PaintFrame, "onResize", function(evt, max)
 
---Событие нажатия на ЛКМ на редакторе
-addEvent(PaintFrame, "onMouseDown", function(evt)
-	
-	if isMouse then 	--Активен ли инструмент "Мышь"
+	IsDrawing = false	
 
-	else				--Если нет, то
-
-		SavingCoordinates = {getEventPositions(evt)}	--Сохранение координат
-		Drawing = true 									--Когда зажата ЛКМ, то нужно активировать рисование на перемещение мыши
-		executeEvent(PaintFrame, "onMouseMove", evt) 	--Вызов события перемещения для того, чтобы поставить точку
-
-		local id = #ObjectTable+1 						--Идентификация для таблицы объектов
-		ObjectTable[id] = {}							--Создание таблицы для данного объекта
-		--print(id)
-		ObjectTable[id].Start = #SavingPaint			--Сохранение начального идентификатора из таблицы всего рисунка
-
-	end
+	if max ~= "max" then
+		local _, h = getSize(evt:GetSize())
+		setSize(ToolPanel, 71, h)
+		paint:Clear()
+		reRendering()
+	end				
 
 end)
 
---Событие отпускания ЛКМ на редакторе
-addEvent(PaintFrame, "onMouseUp", function(evt)
-	Drawing = false			--При отпускании ЛКМ происходит деактивация рисования
-
-	if isMouse then			--Активен ли инструмент "Мышь"						
-
-	else					--Если нет
-
-
-		local id = #ObjectTable					--То идентификатор объекта
-		--print(id)
-		ObjectTable[id].Finish = #SavingPaint	--Сохранение конечного идентификатора из таблицы всего рисунка
-
-		--print(getObjectRectangle(id))
-		--updateObject(id, 50, 150, randomHex(), 3)
-	end
-end)
-
---Установка графического обработчика
-local paint = setFrameDrawing(PaintFrame)
-paint:Clear()
-
---Событие при перемещении мыши
-addEvent(PaintFrame, "onMouseMove", function(evt)
-
-	--Обновление графического обработчика
-	paint = setFrameDrawing(PaintFrame)
-
-	--Если активна переменная рисования
-	if Drawing then
-
-		local oldCoords = SavingCoordinates				--Сохраняем старые координаты для рисования линии
-		SavingCoordinates = {getEventPositions(evt)}	--Обновляем координаты из события
-	
-		--Рисуем линию, началом которой являются старые координаты, а концом - новые
-		paintLine(oldCoords, SavingCoordinates, DefaultColour, DefaultBrushSize)
-
-		--Вносим линию в таблицу, чтобы обновлять рисунок
-		table.insert(SavingPaint, {old = oldCoords, new = SavingCoordinates, defCol = DefaultColour, defSize = DefaultBrushSize})
-
-	end
-
-end)
-
---Событие при изменении размеров окна
-addEvent(PaintFrame, "onResize", function(evt)
-
-	Drawing = false							--Отключаем рисование
-	paint:Clear()							--Очищаем нарисованое
-
-	--Работа с нижней панелью
-	local w, h = getSize(evt:GetSize())		--Получаем размеры окна
-	setSize(ToolPanel, w, 20)				--Устанавливаем размеры нижней панели для 
-	setPosition(ToolPanel, 0, h-71)			--Устанавливаем положение нижней панели в зависимости от размера окна
-
-	setText(LabelFSize, "Размер окна: "..w.."x"..h)
-	setPosition(LabelFSize, w-155, 1)
-
+addEvent(PaintFrame, "onMenu", closeApplication, idExit)
+addEvent(PaintFrame, "onMenu", function()
+	paint:Clear()
 	reRendering()
-end)
+end, idRend)
 
---Событие нажатия на кнопку "Выход" в меню окна - закрыть окно
-addEvent(PaintFrame, "onMenu", function() PaintFrame:Close() end, idExit)
-
---Событие нажатия на кнопку "Очистить" в меню окна
 addEvent(PaintFrame, "onMenu", function() 
-	paint:Clear() 		--Очистить поле рисования
-	SavingPaint = {}	--Очищаем таблицу сохранения координат
+	paint:Clear() 
+	SavePainted = {}
 end, idCler)
 
---Событие нажатия на кнопку "Отменить" в меню окна
-addEvent(PaintFrame, "onMenu", function() 
-	if ObjectTable[#ObjectTable] ~= nil then	--Если таблица с объектами ещё есть 
-		destroyObject(#ObjectTable) 			--То удаляем последний
-	end
-end, idUndo)
+addEvent(PaintFrame, "onKey", function(keys)
+	if isKeyPressed("ctrl") and getKey(keys) == "Z" then undo() end
+	if getKey(keys) == "M" then CurrentColour[1] = "6600FF" end
+end)
 
---Событие нажатия на кнопку информации в меню окна
 addEvent(PaintFrame, "onMenu", function() 
-
-	--Показать окно информации
 	wx.wxMessageBox(infoText, "Информация", wx.wxOK) 
-
 	reRendering()
 end, idAbts)
 
+-------------------------------------------------
+local IsLeftMouse = false
+function onMouseDown(evt, key)
+	if not IsMouseActive then
 
+		IsLeftMouse = key == "left" and true or false
+		--print(IsLeftMouse)
 
---События окна с цветом
---Сначала клавиша для открытия окна
-addEvent(PaletteButton, "onMouseEnter", function()
-	setColor(PaletteButton, "C01818", "FFFFFF")
-end)
-addEvent(PaletteButton, "onMouseLeave", function()
-	setColor(PaletteButton, "444444", "FFFFFF")
-end)
-
-addEvent(SaveButton, "onMouseEnter", function()
-	setColor(SaveButton, "C01818", "FFFFFF")
-end)
-addEvent(SaveButton, "onMouseLeave", function()
-	setColor(SaveButton, "18C018", "FFFFFF")
-end)
-addEvent(SaveButton, "onMouseUp", function() 
-	ColorFrame:Close() 
-	
-	DefaultColour 		= getText(HexEdit)
-	DefaultBrushSize 	= getText(SpinBrush) 
-end)
-
-
-addEvent(MouseButton, "onMouseEnter", function()
-	setColor(MouseButton, "C01818", "FFFFFF")
-end)
-addEvent(MouseButton, "onMouseLeave", function()
-	setColor(MouseButton, isMouse and "18C018" or "444444", "FFFFFF")
-end)
-
-addEvent(PaletteButton, "onMouseUp", function() ColorFrame:Show() end)
-addEvent(MouseButton, "onMouseUp", function()
-	isMouse = not isMouse
-	setColor(MouseButton, isMouse and "18C018" or "444444", "FFFFFF")
-end)
-
-addEvent(MouseButton, "onMouseUp", function()
-	isMouse = not isMouse
-	setColor(MouseButton, isMouse and "18C018" or "444444", "FFFFFF")
-end)
-
-
---При закрытии окна палитры, окно просто свернуть, а не закрыть
-addEvent(ColorFrame, "onClose", function() ColorFrame:Hide() end)
-
---При закрытии основного окна
-addEvent(PaintFrame, "onClose", function(event)  
-	ColorFrame:Close() 		--Закрыть окно палитры
-	ColorFrame:Destroy()	--Удалить это окно
-	event:Skip()			--И предотвратить цикл повтора данного события (тк при вызове функции закрытия этого окна будет вызвано это событие)
-end)
-
---Событие для ключей
-addEvent(PaintFrame, "onKey", function(keys)
-	local key = getKey(keys) 						--Получение текстового ключа
-
-	if isKeyPressed("ctrl") and key == "Z" then		--Если нажат CTRL и нажат Z
-		
-		print("True, CTRL+Z") 						--Вывести, что действие совершается
-
-		if ObjectTable[#ObjectTable] ~= nil then 	--То если таблица не пустая
-			destroyObject(#ObjectTable) 			--Удалить актуальный объект
-		end
+		SavingCoordinates 	= {getEventPositions(evt)}
+		IsDrawing 			= true
+		table.insert(ObjectTable, {Start = #SavePainted})
+		executeEvent(PaintFrame, "onMouseMove", evt) 
 	end
-end)
-
---Цикл по полям ввода цвета
-for _, v in pairs({SpinRed, SpinGreen, SpinBlue}) do
-
-	--Событие на редактирование Spin
-	addEvent(v, "onSpinEdit", function(evt)
-
-		--Получение цветов
-		local r, g, b = getText(SpinRed), getText(SpinGreen), getText(SpinBlue)
-		local color = fromRGBToHEX(r, g, b)
-		
-		--Установка HEX цвета
-		setColor(ColorMonitor, color, color)
-		setText(HexEdit, color)
-	end)
-
 end
 
-addEvent(HexEdit, "onEdit", function(evt)
-	
-	local text = getText(HexEdit)
-	--[[for i = 0, 6-text:len() do
-		text = "0"..text
-	end]]
-	if text:len() > 6 then setText(HexEdit, text:sub(2, text:len() ) ) end
-	if text:len() < 6 then setText(HexEdit, "0"..text) end
-	if not tonumber(text, 16) then 
-		setText(HexEdit, fromRGBToHEX(
-			getText(SpinRed), 
-			getText(SpinGreen), 
-			getText(SpinBlue)
-			)
-		) 
+function onMouseUp(evt)
+	if not IsMouseActive then
+		if not IsDrawing then return false end
+
+		if not CurrentTool.Continious then
+			local tb = {
+				{CoordBlock[1], CoordBlock[2]}, 
+				{CoordBlock[3], CoordBlock[4]}, 
+				CurrentColour[1], CurrentColour[2], CurrentToolSize, CurrentTool
+			}
+			
+			if not IsLeftMouse then tb[3], tb[4] = tb[4], tb[3] end
+
+			saveDrawed(unpack(tb))
+			paintObject(unpack(tb))
+
+			paint:Clear()
+			reRendering()
+		end
+
+		ObjectTable[#ObjectTable].Finish = #SavePainted
+
 	end
 
-	local color 	= getText(HexEdit)
-	local r, g, b 	= fromHEXToRGB(color)
+	IsDrawing = false
+end
 
-	setText(SpinRed, 	r)
-	setText(SpinGreen,	g)
-	setText(SpinBlue, 	b)
+function onMouseMove(evt)
+	
+	paint = setFrameDrawing(PaintFrame)
 
-	--Установка HEX цвета
-	setColor(ColorMonitor, color, color)
-end)
+	if IsDrawing then
+		if CurrentTool.Continious then
+			
+			local oldCoords 	= SavingCoordinates
+			SavingCoordinates 	= {getEventPositions(evt)}
 
---============================================--
---============= ФУНКЦИИ ВЕКТОРОВ =============--
---============================================--
---Перерисовка линий
-function paintLine(tabCoordOld, tabCoordNew, defColor, defSize)
-	setPaintBrush(paint, defColor)			--Установка кисти
-	setPaintPen(paint, defColor, defSize)	--Установка ручки
+			local tb = {oldCoords, SavingCoordinates, CurrentColour[1], CurrentColour[2], CurrentToolSize, CurrentTool}
 
-	drawLine(paint, 						--Рисование линии
+			if not IsLeftMouse then tb[3], tb[4] = tb[4], tb[3] end
+
+			saveDrawed(unpack(tb))
+			paintObject(unpack(tb))
+
+			--movePointTo(12, 100, 100)
+
+		else
+			
+			local positions = SavingCoordinates
+			local sizes = {getEventPositions(evt)}
+
+			local x, y = positions[1], positions[2]
+			local w, h = sizes[1], sizes[2]
+
+			if not (CurrentTool.Name == "Line") then
+
+				w, h = sizes[1]-positions[1], sizes[2]-positions[2]
+
+				if w < 0 then x = sizes[1] w = positions[1]-sizes[1] end
+				if h < 0 then y = sizes[2] h = positions[2]-sizes[2] end
+			end
+
+			CoordBlock = {x, y, w ,h}
+		end
+	end
+end
+-------------------------------------------------
+addEvent(PaintFrame, "onMouseDown", onMouseDown)
+addEvent(PaintFrame, "onMouseUp", onMouseUp)
+addEvent(PaintFrame, "onMouseMove", onMouseMove)
+
+addEvent(SpinSizer, "onMouseUp", function() CurrentToolSize = getText(SpinSizer) end)
+
+-------------------------------------------------
+----------ФУНКЦИИ ПО РАБОТЕ С ОБЪЕКТАМИ----------
+-------------------------------------------------
+function undo()
+	if tonumber(#ObjectTable) and ObjectTable[#ObjectTable] ~= nil then
+		destroyObject(#ObjectTable) 
+	end
+
+	paint:Clear()
+	reRendering()
+end
+addEvent(PaintFrame, "onMenu", undo, idUndo)
+function saveDrawed(old, new, col1, col2, siz, brush)
+
+	CurrentTool.OnDraw(old, new, col, siz)
+	table.insert(SavePainted, {	
+		old 	= old, 
+		new 	= new, 
+		defColF = col1,
+		defColS = col2, 
+		defSize = siz,
+		brush 	= brush
+	})
+	--for i in pairs(SavePainted) do print(SavePainted[i].defColF, SavePainted[i].defColS) end
+end
+function paintObject(tabCoordOld, tabCoordNew, defColorF, defColorS, defSize, brush)
+	setPaintBrush(paint, defColorS)			--Установка кисти
+	setPaintPen(paint, defColorF, defSize)	--Установка ручки
+
+	brush.Draw(paint, 					--Рисование
 		tabCoordOld[1], 
 		tabCoordOld[2], 
 		tabCoordNew[1], 
 		tabCoordNew[2])
 end
-
---Перерисова сохранённой графики
 function reRendering()
 
-	--Цикл по обновлению панели рисования
-	for _, i in pairs(SavingPaint) do	
-
-		--Перерисовка линий
-		paintLine(i.old, i.new, i.defCol, i.defSize)
-
+	for _, i in pairs(SavePainted) do	
+		--print("Colors for "..n..": "..i.defColF.." "..i.defColS)
+		paintObject(i.old, i.new, i.defColF, i.defColS, i.defSize, i.brush)
 	end
 
 end
 
---Получить координаты прямоугольной области, которой при
 function getObjectRectangle(objectID)
 
-	--Идентификатор для точки начала для данного объекта
+
 	local id = ObjectTable[objectID].Start
 
-	--Переменные минимальной и максимальной позиции элементов (идут на вывод, так как именно они и образуют прямоугольную область, в которой они лежат)
-	local minX, minY = SavingPaint[id].old[1], SavingPaint[id].old[2]
+	local minX, minY = SavePainted[id].old[1], SavePainted[id].old[2]
 	local maxX, maxY = minX, minY
 
-	--Цикл от начального до конечного элемента объекта
 	for i = ObjectTable[objectID].Start, ObjectTable[objectID].Finish do
 
-		--Цикл по old и new координатам
-		for _, v in pairs(SavingPaint[i]) do
-			--При минимуме выставляем минимум
+		for _, v in pairs(SavePainted[i]) do
+
 			if v[1] < minX then minX = v[1] end
 			if v[2] < minX then minY = v[2] end
 
-			--При максимуме выставляем максимум
 			if v[1] > maxX then maxX = v[1] end
 			if v[2] > maxX then maxY = v[2] end
 		end
 
 	end
-	--Возвращаем координаты
+
 	return minX, minY, maxX, maxY
 end
 
 --Обновление параметров объекта
-function updateObject(objectID, x, y, defCol, defSize)
+function updateObject(objectID, x, y, defColF, defColS, defSize, brush)
 
-	local id 			= ObjectTable[objectID].Start	--Такой-же идентификатор
+	local id 			= ObjectTable[objectID].Start
 
-	local ax, ay 		= getObjectRectangle(objectID)	--Координаты начала области с точками
-	local difX, difY	= x-ax, y-ay 					--Рассчёт разности между старой координатой и новой
+	local ax, ay 		= getObjectRectangle(objectID)
+	local difX, difY	= x-ax, y-ay 					
 	
 	--Цикл по всем точкам объекта
 	for i = ObjectTable[objectID].Start, ObjectTable[objectID].Finish do
 
 		--Получение актуальных координат 
-		local ax, ay = SavingPaint[i].old[1], SavingPaint[i].old[2]
-		local bx, by = SavingPaint[i].new[1], SavingPaint[i].new[2]
+		local ax, ay = SavePainted[i].old[1], SavePainted[i].old[2]
+		local bx, by = SavePainted[i].new[1], SavePainted[i].new[2]
 
-		SavingPaint[i].old 		= {ax+difX, ay+difY} 	or SavingPaint[i].old 		--Обновление старых координат
-		SavingPaint[i].new 		= {bx+difX, by+difY} 	or SavingPaint[i].new 		--Обновление новых координат
-		SavingPaint[i].defCol 	= defCol 				or SavingPaint[i].defCol 	--Обновление цвета
-		SavingPaint[i].defSize 	= defSize 				or SavingPaint[i].defSize 	--Обновление размера кисти
+		SavePainted[i].old 		= {ax+difX, ay+difY} 	or SavePainted[i].old 		
+		SavePainted[i].new 		= {bx+difX, by+difY} 	or SavePainted[i].new 	
+		SavePainted[i].defColF 	= defColF 				or SavePainted[i].defColF 	
+		SavePainted[i].defColS 	= defColS 				or SavePainted[i].defColS	
+		SavePainted[i].defSize 	= defSize 				or SavePainted[i].defSize 
+		SavePainted[i].brush 	= brush 				or SavePainted[i].brush 
 
 	end
-	--Очистка формы
-	paint:Clear()
 
-	--Перерендеринг всей картинки
+	paint:Clear()
 	reRendering()
 end
 
---Удаление объекта с экрана
+function movePointTo(point, x, y)
+	if SavePainted[point] ~= nil then
+
+		SavePainted[point].new = {x, y}
+
+		if SavePainted[point+1] ~= nil and isPointInObject(point+1, getPointObject(point)) then
+			SavePainted[point+1].old = {x, y}
+		end
+
+		paint:Clear()
+		reRendering()
+
+	end
+end
+
+function isPointInObject(point, object)
+	if getPointObject(point) == object then return true
+	else return false
+	end
+end
+
+function getPointObject(point)
+	local obj = 0
+
+	for i, v in pairs(ObjectTable) do
+		if v.Finish ~= nil then
+			
+			--print(point, type(point), v.Start, v.Finish)
+			if point > v.Start and point <= v.Finish then
+				obj = i
+				break
+			else
+				obj = false
+			end
+		end
+	end
+	return obj
+end
+
 function destroyObject(objectID)
 
-	--Цикл по всем точкам объекта
-	for i = ObjectTable[objectID].Start, ObjectTable[objectID].Finish do
-		--Обнуление сохраняющей таблицы, без потери индексов
-		SavingPaint[i] = nil
-	end
-	ObjectTable[objectID] = nil
-	--Очистка формы
-	paint:Clear()
+	--if not tonumber(ObjectTable[objectID].Start+1) then return false end
+	if not tonumber(ObjectTable[objectID].Finish) then return false end
 
-	--Перерендеринг
+	for i = ObjectTable[objectID].Start+1, ObjectTable[objectID].Finish do
+		SavePainted[i] = nil
+	end
+
+	ObjectTable[objectID] = nil
+	paint:Clear()	
 	reRendering()
 
 end

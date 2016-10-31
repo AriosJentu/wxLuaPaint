@@ -1,1 +1,1 @@
-lua5.2 $HOME/Lua/Paint/paint.lua
+lua5.2 $HOME/Lua/NewPaint/paint.lua
