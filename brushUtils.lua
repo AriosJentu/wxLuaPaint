@@ -5,14 +5,28 @@ ToolRegistry = {}
 DrawTool = {}
 DrawTool.__index = DrawTool
 
+Figure = {}
+Figure.__index = Figure
+
+function Figure.New()
+	local self = setmetatable({}, Figure)
+
+	self.Points = {}
+	self.Tool = nil
+	self.PenColor = nil
+	self.BrushColor = nil
+
+	return self
+end
+
 function DrawTool.New(name)
 
 	local self 		= setmetatable({}, DrawTool)
 
 	self.Name 		= name
 	self.Continious	= false
-	self.OnDraw		= function(cords, sizes, color, brushsize) end
-	self.Draw 		= function(paint, x, y, w, h) end
+	self.OnDraw		= function(tab) end
+	self.Draw 		= function(paint, tab) end
 	self.Icon 		= APPDIR.."icons/def.png"
 	
 	ToolRegistry[name] = self

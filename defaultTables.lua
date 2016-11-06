@@ -116,7 +116,7 @@ tableOfEvents = {
 		["resize"] 	= wx.wxEVT_SIZE							,
 		["max"] 	= wx.wxEVT_MAXIMIZE						,
 		["all"]		= "onResize"
-	}													,
+	}														,
 	["onClose"] 	= wx.wxEVT_CLOSE_WINDOW					,
 	["onActivate"] 	= wx.wxEVT_ACTIVATE						,
 	["onKey"] 		= wx.wxEVT_CHAR_HOOK					,
@@ -130,32 +130,29 @@ tableOfEvents = {
 		["right"] 	= wx.wxEVT_RIGHT_DOWN						, 
 		["middle"]	= wx.wxEVT_MIDDLE_DOWN						,
 		["all"]		= "onMouseDown"								
-	}														,	
-	["onMouseUp"] 	= 
+	}															,	
+	["onMouseUp"] 	= 	
 	{
 		["left"]	= wx.wxEVT_LEFT_UP							, 
 		["right"]	= wx.wxEVT_RIGHT_UP							,  
 		["middle"]	= wx.wxEVT_MIDDLE_UP						,
 		["all"]		= "onMouseUp"						
-	}														,
+	}															,
 	["onMouseDoubleClick"] = 
 	{
 		["left"] 	= wx.wxEVT_LEFT_DCLICK						, 
 		["right"]	= wx.wxEVT_RIGHT_DCLICK						,  
 		["middle"]	= wx.wxEVT_MIDDLE_DCLICK					,
 		["all"]		= "onMouseDoubleClick"				
-	}														,
+	}															,
 	["onMouseEnter"]= wx.wxEVT_ENTER_WINDOW		,
 	["onMouseLeave"]= wx.wxEVT_LEAVE_WINDOW		,
-	["onWheel"] 	= 
-	{
-		["up"] 		= wx.wxEVT_SCROLL_LINEUP	,
-		["down"]	= wx.wxEVT_SCROLL_LINEDOWN
-	}														,
+	["onWheel"] 	= wx.wxEVT_MOUSEWHEEL		,
 	["onShows"] 	= wx.wxEVT_SHOW				,
 	["onPaint"] 	= wx.wxEVT_PAINT 
 
 }
+
 --Символы, которые будут использоваться в рассчётах
 Symbols = {
 	Plus = "+",

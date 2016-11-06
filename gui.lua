@@ -6,10 +6,21 @@ centerElement(PaintFrame)
 setAppIcon(PaintFrame, iconDir)
 setColor(PaintFrame, "FFFFFF", "444444")
 
-paint = setFrameDrawing(PaintFrame)
+ScrollPane, Scrolling = createScrollPane(71, 0, 640-71, 480-51, _, PaintFrame)
+setColor(ScrollPane, "CCCCCC", "CCCCCC")
+
+PaintPanel = createPanel(2, 2, 640-73-4-5, 480-51-4-5, ScrollPane)
+setColor(PaintPanel, "FFFFFF", "444444")
+
+resizer = createPanel(640-73-7, 480-51-7, 5, 5, ScrollPane)
+setColor(resizer, "555555", "555555")
+
+addObjectOnPane(resizer, ScrollPane)
+
+paint = setFrameDrawing(PaintPanel)
 paint:Clear()
 
-ToolPanel 		= createPanel(0, 0, 62, 480, PaintFrame)
+ToolPanel 		= createPanel(0, 0, 71, 480, PaintFrame)
 setColor(ToolPanel, "444444", "444444")
 
 createMenu(PaintFrame, {"Файл", "Помощь"})
@@ -116,4 +127,5 @@ function closeApplication(evt)
 	if evt then
 		evt:Skip()
 	end
+	SkippingEvent = true
 end

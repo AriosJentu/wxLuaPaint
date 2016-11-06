@@ -23,21 +23,12 @@ function getCode(evt) return evt:GetKeyCode() end
 
 function getType(element)
 
-	--Получаем текстовый идентификатор элемента
-	local name = tostring(element) --Вернёт "table:0xXXXXXXXX (wxName:0xXXXXXXXX)"
-
 	--переменная на вывод - тип элемента
 	local typs = nil
 	
 	--Если в идентификаторе будет найдено wxButton, StaticText, etc
-	if name:find("wxButton") 			then typs = "button" --То вернёт кнопку
-	elseif name:find("wxStaticText") 	then typs = "label"
-	elseif name:find("wxTextCtrl") 		then typs = "edit"
-	elseif name:find("wxFrame") 		then typs = "frame"
-	elseif name:find("wxPaintDC") 		then typs = "paint"
-	elseif name:find("wxSpinCtrl")		then typs = "spin"
-	elseif name:find("wxColourDialog")	then typs = "coldiag"
-
+	if element ~= nil and element.Types then
+		typs = element.Types
 	else --В противном случае вернуть тип элемента
 		typs = type(element) 
 	end
@@ -88,6 +79,8 @@ function createFrame(x, y, w, h, title, style, parent)
 	)
 	
 	--frame:Show(true)
+	frame.HasMenu = false
+	frame.Types = "frame"
 
 	return frame, id
 end
@@ -112,6 +105,8 @@ function createButton(x, y, w, h, title, style, parent)
 		wx.wxSize(w, h) 	or wx.wxDefaultSize, 
 		style 				or wx.wxBU_EXACTFIT
 	)
+
+	button.Types = "button"
 	
 	--Вернуть кнопку
 	return button, id
@@ -137,6 +132,8 @@ function createIconButton(x, y, w, h, iconDir, style, parent)
 		wx.wxSize(w, h) 	or wx.wxDefaultSize, 
 		style 				or wx.wxBU_AUTODRAW
 	)
+
+	button.Types = "iconbutton"
 	
 	--Вернуть кнопку
 	return button, id
@@ -175,6 +172,8 @@ function createEdit(x, y, w, h, text, style, parent)
 		style 				or 0
 	)
 
+	edit.Types = "edit"
+
 	--Вернуть
 	return edit, id
 end
@@ -205,6 +204,8 @@ function createLabel(x, y, w, h, text, style, parent)
 		style 				or 0
 	)
 
+	label.Types = "label"
+
 	return label, id
 end
 
@@ -227,6 +228,8 @@ function createMenu(frame, args)
 	--На окно помещается меню-бар
 	frame:SetMenuBar(menuBar)
 
+	frame.HasMenu = true
+
 end
 
 --Добавление в меню элемент
@@ -245,7 +248,7 @@ function createPanel(x, y, w, h, parent)
 
 	--Если нет родительского элемента, то не создавать поле
 	if not parent then 
-		print("Error with CREATING EDIT: needs parent")
+		print("Error with CREATING PANEL: needs parent")
 		return false 
 	end
 
@@ -259,6 +262,8 @@ function createPanel(x, y, w, h, parent)
 		wx.wxSize(w, h) 	or wx.wxDefaultSize, 
 		wx.wxTAB_TRAVERSAL
 	)
+
+	panel.Types = "panel"
 
 	--Вернуть
 	return panel, id
@@ -286,6 +291,8 @@ function createSpin(x, y, w, h, val, parent, min, max)
 		tonumber(max) or 255
 	)
 
+	spin.Types = "spin"
+
 	return spin, id
 end
 
@@ -309,19 +316,281 @@ function createColorButton(x, y, w, h, color, style, parent)
 		wx.wxCLRP_DEFAULT_STYLE
 	)
 
+	colpic.Types = "colorpicker"
+
 	return colpic, id
 end
 
 function createColorDialog(parent, data)
 	--Если нет родительского элемента, то не создавать поле
 	if not parent then 
-		print("Error with CREATING COLOR BUTTON: needs parent")
+		print("Error with CREATING COLOR DIALOG: needs parent")
 		return false 
 	end
 
 	local coldiag = wx.wxColourDialog(parent, data)
 
+	coldiag.Types = "coldiag"
 	return coldiag
+end
+
+function createScrollZone(x, y, w, h, style, parent)
+	--Если нет родительского элемента, то не создавать поле
+	if not parent then 
+		print("Error with CREATING SCROLL ZONE: needs parent")
+		return false 
+	end
+
+	local id = wx.wxID_ANY
+
+	local scpane = wx.wxScrolledWindow(
+		parent,
+		id,
+		wx.wxPoint(x, y) 	or wx.wxDefaultPosition,
+		wx.wxSize(w, h)		or wx.wxDefaultSize,
+		style or wx.wxHSCROLL+wx.wxVSCROLL
+	)
+
+	scpane.Types = "scrollwin"
+
+	return scpane, id
+
+end	
+
+function createScrollPane(x, y, w, h, types, parent)
+	--Если нет родительского элемента, то не создавать поле
+	if not parent then 
+		print("Error with CREATING SCROLL ZONE: needs parent")
+		return false 
+	end
+
+
+	local id = wx.wxID_ANY
+
+	local paneBack = createPanel(x, y, w, h, parent)
+	setColor(paneBack, "444444", "444444")
+	local centralPanel = createPanel(0, 0, w-10, h-10, paneBack)
+	setColor(centralPanel, "FFFFFF", "FFFFFF")
+
+	centralPanel.MinW, centralPanel.MinH = w-10, h-10
+
+	local quad = createPanel(w-10, h-10, 11, 11, paneBack)
+	setColor(quad, "333333", "333333")
+
+	local sVert = createPanel(w-10, 0, 10, h-10, paneBack)
+	local sHorz = createPanel(0, h-10, w-10, 10, paneBack)
+	setColor(sVert, "555555", "555555")
+	setColor(sHorz, "555555", "555555")
+
+	local vScroller = createPanel(1, 0, 8, 60, sVert)
+	local hScroller = createPanel(0, 1, 60, 8, sHorz)
+	setColor(vScroller, "888888", "888888")
+	setColor(hScroller, "888888", "888888")
+
+	paneBack.Moving = false
+
+	addEvent(parent, "onResize", function(evt, typ)
+		local aw, ah = getSize(evt:GetSize())
+		local ax, ay = getPositions(paneBack)
+		if getType(parent) == "frame" then 
+		
+			if parent.HasMenu then
+				ay = ay+51 
+			else
+				ay = ay+20
+			end
+
+		end
+
+		aw = aw-ax - 1
+		ah = ah-ay
+
+		local sw, sh = aw-10, ah-10
+
+		if aw ~= nil then
+			setSize(paneBack, aw, ah)
+
+
+			local asw, ash = sw, sh
+
+			local bx, by = getPositions(centralPanel)
+
+			if bx+centralPanel.MinW < (aw-10) then
+				bx = (aw-10)-centralPanel.MinW
+			end
+			if by+centralPanel.MinH < (ah-10) then
+				by = (ah-10)-centralPanel.MinH
+			end
+
+			if bx > 0 then 
+				bx = 0 
+				setPosition(hScroller, 0, 1)
+			end
+			if by > 0 then 
+				by = 0 
+				setPosition(vScroller, 1, 0)
+			end
+
+			if sw < centralPanel.MinW then 
+				asw = centralPanel.MinW 
+			end
+			if sh < centralPanel.MinH then 
+				ash = centralPanel.MinH 
+			end
+
+			setSize(centralPanel, asw, ash)
+			setPosition(centralPanel, bx, by)
+
+			setPosition(sVert, sw, 0)
+			setPosition(sHorz, 0, sh)
+			setPosition(quad, sw, sh)
+
+			setSize(sVert, 10, sh)
+			setSize(sHorz, sw, 10)
+		end
+	end)
+
+	centralPanel.scSize, centralPanel.mPos = 0, 0
+	addEvent(vScroller, "onMouseDown", function(evt)
+		centralPanel.scSize = vScroller:GetScreenPosition().y
+		_, centralPanel.mPos = getMousePosition()
+
+		paneBack.Moving = "vert"
+	end)
+	addEvent(hScroller, "onMouseDown", function(evt)
+		centralPanel.scSize = hScroller:GetScreenPosition().x
+		centralPanel.mPos = getMousePosition()
+
+		paneBack.Moving = "horz"
+	end)
+
+	addEvent(vScroller, "onMouseUp", function(evt)
+		paneBack.Moving = false
+		centralPanel.scSize, centralPanel.mPos = 0, 0
+	end)
+	addEvent(hScroller, "onMouseUp", function(evt)
+		paneBack.Moving = false
+		centralPanel.scSize, centralPanel.mPos = 0, 0
+	end)
+
+	addEvent(vScroller, "onMouseMove", function(evt)
+
+		if paneBack.Moving == "vert" then			
+			rePosScroll(centralPanel, "vert")
+		end
+	end)
+
+	addEvent(hScroller, "onMouseMove", function(evt)
+
+		if paneBack.Moving == "horz" then	
+			rePosScroll(centralPanel, "horz")
+		end
+	end)
+
+
+
+
+	centralPanel.Types = "scrollpane"
+	centralPanel.HScroll = {sl = hScroller, bk = sHorz}
+	centralPanel.VScroll = {sl = vScroller, bk = sVert}
+	centralPanel.Back = paneBack
+	paneBack.Types = "scrollpaneback"
+
+	return centralPanel, paneBack
+end
+
+function rePosScroll(element, topbot)
+	local oldMouse = element.mPos
+	local oldPos = element.scSize
+	local mouseX, mouseY = getMousePosition()
+	local scrNX, scrNY = element.HScroll.sl:GetScreenPosition().x, element.VScroll.sl:GetScreenPosition().y
+
+	local firstW, firstH = scrNX-oldPos, scrNY-oldPos
+	local secW, secH = mouseX-oldMouse, mouseY-oldMouse
+	local oldCordX = getPositions(element.HScroll.sl)
+	local _, oldCordY = getPositions(element.VScroll.sl)
+
+	local x, y = oldCordX+secW-firstW, oldCordY+secH-firstH
+
+	local w = getSize(element.HScroll.bk:GetSize())
+	local _, h = getSize(element.VScroll.bk:GetSize())
+	w, h = w-60, h-60
+
+	if x < 0 then x = 0
+	elseif x > w then x = w
+	end
+	if y < 0 then y = 0
+	elseif y > h then y = h
+	end
+
+	local sizesW, sizesH = getSize(element.Back:GetSize())
+			
+	if sizesW-10 > element.MinW then x = 0
+	else
+
+		local sx, sy = getPositions(element)
+		local scrollPerc = (x/w)
+
+		sx = -scrollPerc*(element.MinW-(sizesW-10))
+
+		if topbot == "horz" then
+			setPosition(element, sx, sy)
+		end
+	end
+
+	if sizesH-10 > element.MinH then x = 0
+	else
+
+		local sx, sy = getPositions(element)
+		local scrollPerc = (y/h)
+
+		sy = -scrollPerc*(element.MinH-(sizesH-10))
+
+
+		if topbot == "vert" then
+			setPosition(element, sx, sy)
+		end
+
+	end
+
+	if topbot == "vert" then
+		 setPosition(element.VScroll.sl, 1, y)
+	end
+	if topbot == "horz" then
+		 setPosition(element.HScroll.sl, x, 1)
+	end
+end
+
+function addObjectOnPane(object, pane)
+	local x, y = getPositions(object)
+	local w, h = getSize(object:GetSize())
+
+	if x+w > pane.MinW then pane.MinW = x+w end
+	if y+h > pane.MinH then pane.MinH = y+h end
+
+	setSize(pane, pane.MinW, pane.MinH)
+
+
+	addEvent(object, "onResize", function()
+
+		local ax, ay = getPositions(object)
+		local aw, ah = getSize(object:GetSize())
+
+		if ax > x then pane.MinW = ax+aw end
+		if ay > y then pane.MinH = ay+ah end
+
+	end)
+end
+
+function setPaneMinSizes(pane, w, h)
+	pane.MinW, pane.MinH = w, h
+
+	local aw, ah = getSize(pane.Back:GetSize())
+
+	if aw-10 > w then aw = aw-10 else aw = pane.MinW end
+	if ah-10 > h then ah = ah-10 else ah = pane.MinH end
+
+	setSize(pane, aw, ah)
 end
 
 ------------------------------------------------------------
@@ -511,12 +780,12 @@ end
 --------------------------------------------------------------
 
 --Функция по переводу текстового названия события в числовой
-function getEventID(element, name, key)
+function getEventID(name, key)
 
 	name = 
 		tonumber(tableOfEvents[name]) or 
-		tonumber(tableOfEvents[name][key or "all" or "up"]) or 
-		tostring(tableOfEvents[name][key or "all" or "up"]) or nil
+		--tonumber(tableOfEvents[name][key or "all"]) or 
+		tostring(tableOfEvents[name][key or "all"]) or nil
 	return name
 
 end
@@ -533,22 +802,25 @@ function addEvent(element, name, funct, key)
 
 	local id = wx.wxID_ANY
 
-	if name == "onMenu" or getType(element) == "coldiag" then id = key end	
+	local savedName = tostring(name)
+	--Получаем номер события через название
+	name = getEventID(name, key)
+
+	if tostring(name) == "onMenu" or getType(element) == "coldiag" then id = key end	
 	if tostring(name) == "onMouseDown" or tostring(name) == "onMouseUp" or tostring(name) == "onMouseDoubleClick" or tostring(name) == "onResize" then
 		if not key then key = "all" end
-	else
-		if not key then key = "up" end
 	end
 
-	--Получаем номер события через название
-	name = getEventID(element, name, key)
 
 	if tostring(name) == "onMouseDown" or tostring(name) == "onMouseUp" or tostring(name) == "onMouseDoubleClick" then
+
 		element:Connect(id, tableOfEvents[name].right, function(evt) funct(evt, "right") end)
 		element:Connect(id, tableOfEvents[name].middle, function(evt) funct(evt, "middle") end)
+
 		name = tableOfEvents[name].left
 
 	elseif tostring(name) == "onResize" then
+
 		element:Connect(id, tableOfEvents[name].max, function(evt) funct(evt, "max") end)
 		name = tableOfEvents[name].resize
 
@@ -560,11 +832,22 @@ function addEvent(element, name, funct, key)
 		return false 
 	end
 
-	local evs = tostring(name) == "onResize" and "max" or "left"
-	element:Connect(id, name, function(evt) funct(evt, key == "all" and evs or key) end)
+	local evs = savedName == "onResize" and "max" or "left"
+	element:Connect(id, tonumber(name), function(evt) 
+		
+		if savedName == "onWheel" then 
+			key = evt:GetWheelRotation() 
+			if key > 0 then key = "up"
+			else key = "down" end
+		end
+
+		funct(evt, key == "all" and evs or key) 
+		evt:Skip()
+	end)
 	
 	if funTab[element] == nil then funTab[element] = {} end
 	funTab[element][name] = funct
+	--print("funTab["..tostring(element).."]["..name.."]")
 end
 
 --Функция по вызову созданного события
@@ -572,13 +855,21 @@ function executeEvent(element, name, key, but)
 
 	--Получаем ID события по имени
 	local oldName = name --Сохраним для ошибки
-	name = getEventID(element, name, key)
+	name = getEventID(name, key)
 
 	--Если в таблице функций нет такого элемента
 	if not funTab[element] then
 		--То прервать функцию
 		print("Error with EXECUTING EVENT: events for this element not handled")
 		return false
+	end
+
+	if tostring(name) == "onMouseDown" or tostring(name) == "onMouseUp" or tostring(name) == "onMouseDoubleClick" then
+		name = tableOfEvents[name].left
+
+	elseif tostring(name) == "onResize" then
+		name = tableOfEvents[name].resize
+
 	end
 
 	--Если в таблице есть элемент, но нет ID события на него
@@ -588,8 +879,10 @@ function executeEvent(element, name, key, but)
 		return false
 	end
 
+
 	--исполняем функцию события
 	funTab[element][name](key, but)
+	--print("funTab["..tostring(element).."]["..name.."]")
 end
 
 
@@ -615,6 +908,14 @@ function closeApplication() return wx.wxGetApp():Exit() end
 
 function getScreenSize()
 	x, y = getSize( wx.wxDisplay():GetGeometry():GetSize() )
+	return x, y
+end
+
+function getMousePosition()
+	local n = wx.wxGetMousePosition()
+	local x, y = n.x, n.y
+
+	--print(x, y)
 	return x, y
 end
 
