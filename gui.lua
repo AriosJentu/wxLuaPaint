@@ -118,7 +118,14 @@ local label = createLabel(3, (n+1)*36+3, 63, 25, "Размер:", _, ToolPanel)
 setColor(label, "FFFFFF", "FFFFFF")
 SpinSizer = createSpin(3, (n+1)*36+22, 63, 30, "0", ToolPanel, 1, 128)
 
-PaintFrame:SetMinSize(wx.wxSize(320, (n+2)*36+70))
+n = n+1
+
+local labels = createLabel(3, (n+1)*40, 63, 25, "Масштаб:", _, ToolPanel)
+setColor(labels, "FFFFFF", "FFFFFF")
+SpinScale = createSpin(3, (n+1)*40+22, 63, 30, "100", ToolPanel, 20, 500)
+
+
+PaintFrame:SetMinSize(wx.wxSize(320, (n+2)*40+70))
 
 
 function closeApplication(evt)

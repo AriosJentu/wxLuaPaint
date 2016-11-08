@@ -8,6 +8,8 @@ local IsMouseActive			= false
 local CurrentToolSize = 1	
 local CurrentFigure = nil	
 
+local PercentZoomed = 100
+
 local ObjectTable 	= {}		
 
 addEvent(SideButton.Mouse, "onMouseDown", function()
@@ -24,11 +26,12 @@ addEvent(PaintFrame, "onResize", function(evt, max)
 
 	if max ~= "max" then
 		local w, h = getSize(evt:GetSize())
+
 		setSize(ToolPanel, 71, h)
 		setSize(ScrollPane, w-71-2, h-51)
 		--setSize(Scrolling, w-71-2, h-51)	
 	
-		paint:Clear()
+		--paint:Clear()
 		reRendering()
 	end				
 
@@ -47,7 +50,7 @@ end)
 addEvent(resizer, "onMouseUp", function()
 	Resizing = false
 
-	paint:Clear()
+	--paint:Clear()
 	reRendering()
 end)
 addEvent(resizer, "onMouseMove", function(evt)
@@ -62,31 +65,33 @@ addEvent(resizer, "onMouseMove", function(evt)
 		setPosition(resizer, newX, newY)
 		setSize(PaintPanel, newX-2, newY-2)
 
-		setPaneMinSizes(ScrollPane, newX+7, newY+7)
+		setPaneMinSizes(ScrollPane, newX+9, newY+9)
 	end
 end)
 
 
 addEvent(PaintFrame, "onMenu", closeApplication, idExit)
 addEvent(PaintFrame, "onMenu", function()
-	paint:Clear()
+	--paint:Clear()
 	reRendering()
 end, idRend)
 
 addEvent(PaintFrame, "onMenu", function() 
 	paint:Clear() 
 	SavePainted = {}
-	FigureList = {}
+	Figures = {}
 end, idCler)
 
 
-addEvent(SpinSizer, "onMouseUp", function() CurrentToolSize = getText(SpinSizer) end)
+addEvent(SpinSizer, "onMouseUp", function()
+
+	CurrentToolSize = getText(SpinSizer) 
+end)
 
 addEvent(PaintFrame, "onKey", function(keys)
 	if isKeyPressed("ctrl") and getKey(keys) == "Z" then undo() end
 	if getKey(keys) == "M" then CurrentColour[1] = "6600FF" end
 
-	--print(isKeyPressed("ctrl"),  isKeyPressed("shift"), "'"..getKey(keys).."'")
 	if isKeyPressed("ctrl") and isKeyPressed("shift") then 
 		local jk = getKey(keys)
 		if jk == "=" or jk == "-" then
@@ -104,54 +109,66 @@ end, idAbts)
 
 -------------------------------------------------
 local IsLeftMouse = false
+local IsPanelMoving = false
+local SavePanelCoordinate = {}
+
 function onMouseDown(evt, key)
+
+	--print("Down "..key)
+	if key == "middle" then
+
+		local scrX, scrY = getPositions(ScrollPane)
+		local curX, curY = getMousePosition()
+	
+		IsPanelMoving = true
+		SavePanelCoordinate = {curX, curY, scrX, scrY}
+
+	end
 
 	if not IsMouseActive then
 		if key == "middle" then return false end
 
 		IsLeftMouse = key == "left" and true or false
-		--print(IsLeftMouse)
 
-		SavingCoordinates 	= {getEventPositions(evt)}
+		SavingCoordinates = {getEventPositions(evt)}
 		IsDrawing 			= true
 		
-		--[[CurrentFigure = Figure.New()
-		CurrentFigure.Points = {getEventPositions(evt)}
+		CurrentFigure = Figure.New()
+		table.insert(CurrentFigure.Points, SavingCoordinates)
 		CurrentFigure.Tool = CurrentTool
-		CurrentFigure.PenColor = CurrentColour[1]
-		CurrentFigure.BrushColor = CurrentColour[2] ]]
+		CurrentFigure.PenColor = CurrentColour[IsLeftMouse and 1 or 2]
+		CurrentFigure.BrushColor = CurrentColour[IsLeftMouse and 2 or 1]
+		CurrentFigure.BrushSize = CurrentToolSize*(PercentZoomed/100)
 		
-		table.insert(ObjectTable, {Start = #SavePainted})
 		executeEvent(PaintPanel, "onMouseMove", evt) 
 	end
 end
 
-function onMouseUp(evt)
+function onMouseUp(evt, key)
+
+	--if key == "middle" then
+	if IsPanelMoving then
+
+		SavePanelCoordinate = {}
+		IsPanelMoving = false
+
+		reRendering()
+
+	end
+
 	if not IsMouseActive then
 		if not IsDrawing then return false end
 		
-		--table.insert(FigureList, CurrentFigure)
-		
 		if not CurrentTool.Continious then
-			local tb = {
-				{CoordBlock[1], CoordBlock[2]}, 
-				{CoordBlock[3], CoordBlock[4]}, 
-				CurrentColour[1], 
-				CurrentColour[2], 
-				CurrentToolSize, 
-				CurrentTool
-			}
 			
-			if not IsLeftMouse then tb[3], tb[4] = tb[4], tb[3] end
-
-			saveDrawed(tb)
-			paintObject(tb)
-
-			paint:Clear()
 			reRendering()
-		end
 
-		ObjectTable[#ObjectTable].Finish = #SavePainted
+			table.insert(CurrentFigure.Points, {getEventPositions(evt)})
+
+			CurrentTool:DrawFigure(paint, CurrentFigure)
+			CurrentFigure = nil
+
+		end
 
 	end
 
@@ -164,69 +181,24 @@ function onMouseMove(evt)
 
 	if IsDrawing then
 		if CurrentTool.Continious then
-			
-			local oldCoords 	= SavingCoordinates
-			SavingCoordinates 	= {getEventPositions(evt)}
 
-			local tb = {oldCoords, SavingCoordinates, CurrentColour[1], CurrentColour[2], CurrentToolSize, CurrentTool}
+			table.insert(CurrentFigure.Points, {getEventPositions(evt)})
 
-			if not IsLeftMouse then tb[3], tb[4] = tb[4], tb[3] end
-
-			saveDrawed(tb)
-			paintObject(tb)
-
-			--movePointTo(12, 100, 100)
+			CurrentTool:DrawFigure(paint, CurrentFigure)
 
 		else
 
-			local sz = {getEventPositions(evt)}
-			CoordBlock = {SavingCoordinates[1], SavingCoordinates[2], sz[1], sz[2]}
+			CurrentFigure.Points[2] = {getEventPositions(evt)}
 
-			print(CurrentColour[1], CurrentColour[2])	
-
-			paint:Clear()
 			reRendering()
 
-			setPaintBrush(paint, CurrentColour[2])			--Установка кисти
-			setPaintPen(paint, CurrentColour[1], CurrentToolSize)
-			CurrentTool.Draw(paint, {SavingCoordinates, sz})
+			setPaintBrush(paint, CurrentColour[ IsLeftMouse and 2 or 1])			--Установка кисти
+			setPaintPen(paint, CurrentColour[ IsLeftMouse and 1 or 2], CurrentToolSize*(PercentZoomed/100))
+			CurrentTool.Draw(paint, {old = SavingCoordinates, new = {getEventPositions(evt)}})
 
 		end
 
 	end
-end
--------------------------------------------------
-addEvent(PaintPanel, "onMouseDown", onMouseDown)
-addEvent(PaintPanel, "onMouseUp", onMouseUp)
-addEvent(PaintPanel, "onMouseMove", onMouseMove)
-
--------------------------------------------------
-------------ПЕРЕМЕЩЕНИЕ ПОЛЯ РИСОВАНИЯ-----------
--------------------------------------------------
-local IsPanelMoving = false
-local SavePanelCoordinate = {}
-
-addEvent(PaintPanel, "onMouseDown", function()
-
-	local scrX, scrY = getPositions(ScrollPane)
-	local curX, curY = getMousePosition()
-
-	
-	IsPanelMoving = true
-	SavePanelCoordinate = {curX, curY, scrX, scrY}
-
-end, "middle")
-
-addEvent(PaintPanel, "onMouseUp", function()
-	SavePanelCoordinate = {}
-	IsPanelMoving = false
-
-	paint:Clear()
-	reRendering()
-
-end)
-
-addEvent(PaintPanel, "onMouseMove", function()
 
 	if IsPanelMoving then
 
@@ -249,152 +221,80 @@ addEvent(PaintPanel, "onMouseMove", function()
 			if newX < pw-w then newX = pw-w end
 			if newY < ph-h then newY = ph-h end
 
-			print(newX, newY, w-pw, h-ph)
 			setPosition(ScrollPane, newX, newY)
+
+			setScrollPosition(ScrollPane, (newY/(ph-h))*100, (newX/(pw-w))*100 )
 		end
+	end
+end
+
+-------------------------------------------------
+addEvent(PaintPanel, "onMouseDown", onMouseDown)
+addEvent(PaintPanel, "onMouseUp", onMouseUp)
+addEvent(PaintPanel, "onMouseMove", onMouseMove)
+
+local StartCycle = false
+
+addEvent(SpinScale, "onMouseUp", function()
+
+	zoomPic(getText(SpinScale))
+
+	for _, v in pairs(Figures) do
+		v.Tool:DrawFigure(paint, v)
 	end
 
 end)
+addEvent(SpinScale, "onMouseLeave", function()
 
-addEvent(PaintPanel, "onWheel", function(evt, key)
-	
+	reRendering()
+
 end)
+
 
 -------------------------------------------------
 ----------ФУНКЦИИ ПО РАБОТЕ С ОБЪЕКТАМИ----------
 -------------------------------------------------
 function undo()
-	if tonumber(#ObjectTable) and ObjectTable[#ObjectTable] ~= nil then
-		destroyObject(#ObjectTable) 
-	end
-
-	paint:Clear()
+	Figures[#Figures] = nil
 	reRendering()
 end
-addEvent(PaintFrame, "onMenu", undo, idUndo)
-function saveDrawed(ins)
 
-	CurrentTool.OnDraw(ins)
-	table.insert(SavePainted, ins)
-	--for i in pairs(SavePainted) do print(SavePainted[i].defColF, SavePainted[i].defColS) end
-end
-function paintObject(ins)
-
-	setPaintBrush(paint, ins[4])			--Установка кисти
-	setPaintPen(paint, ins[3], ins[5])		--Установка ручки
-
-	ins[6].Draw(paint, ins)
-end
 function reRendering()
 
-	for _, i in pairs(SavePainted) do	
-		paintObject(i)
-	end
-
-end
-
-function getObjectRectangle(objectID)
-
-
-	local id = ObjectTable[objectID].Start
-
-	local minX, minY = SavePainted[id].old[1], SavePainted[id].old[2]
-	local maxX, maxY = minX, minY
-
-	for i = ObjectTable[objectID].Start, ObjectTable[objectID].Finish do
-
-		for _, v in pairs(SavePainted[i]) do
-
-			if v[1] < minX then minX = v[1] end
-			if v[2] < minX then minY = v[2] end
-
-			if v[1] > maxX then maxX = v[1] end
-			if v[2] > maxX then maxY = v[2] end
-		end
-
-	end
-
-	return minX, minY, maxX, maxY
-end
-
---Обновление параметров объекта
-function updateObject(objectID, x, y, defColF, defColS, defSize, brush)
-
-	local id 			= ObjectTable[objectID].Start
-
-	local ax, ay 		= getObjectRectangle(objectID)
-	local difX, difY	= x-ax, y-ay 					
-	
-	--Цикл по всем точкам объекта
-	for i = ObjectTable[objectID].Start, ObjectTable[objectID].Finish do
-
-		--Получение актуальных координат 
-		local ax, ay = SavePainted[i].old[1], SavePainted[i].old[2]
-		local bx, by = SavePainted[i].new[1], SavePainted[i].new[2]
-
-		SavePainted[i].old 		= {ax+difX, ay+difY} 	or SavePainted[i].old 		
-		SavePainted[i].new 		= {bx+difX, by+difY} 	or SavePainted[i].new 	
-		SavePainted[i].defColF 	= defColF 				or SavePainted[i].defColF 	
-		SavePainted[i].defColS 	= defColS 				or SavePainted[i].defColS	
-		SavePainted[i].defSize 	= defSize 				or SavePainted[i].defSize 
-		SavePainted[i].brush 	= brush 				or SavePainted[i].brush 
-
-	end
-
 	paint:Clear()
-	reRendering()
+
+	for _, v in pairs(Figures) do
+		v.Tool:DrawFigure(paint, v)
+	end
+
 end
+addEvent(PaintFrame, "onMenu", undo, idUndo)
 
-function movePointTo(point, x, y)
-	if SavePainted[point] ~= nil then
+local PreviousZoom = 1
+function zoomPic(perc)
 
-		SavePainted[point].new = {x, y}
+	PercentZoomed = perc
+	perc = perc/100
 
-		if SavePainted[point+1] ~= nil and isPointInObject(point+1, getPointObject(point)) then
-			SavePainted[point+1].old = {x, y}
+	local newX, newY = getPositions(resizer)
+	newX, newY = (newX/PreviousZoom)*perc, (newY/PreviousZoom)*perc
+
+	setPosition(resizer, newX, newY)
+	setSize(PaintPanel, newX-2, newY-2)
+	setPaneMinSizes(ScrollPane, newX+9, newY+9)
+
+	for i, v in pairs(Figures) do
+
+		for _, j in pairs(v.Points) do
+			j[1], j[2] = (j[1]/PreviousZoom)*perc, (j[2]/PreviousZoom)*perc
 		end
 
-		paint:Clear()
+		v.BrushSize = math.floor((v.BrushSize/PreviousZoom)*perc * 100) / 100
+		--print("Brush "..v.BrushSize)
+
 		reRendering()
-
-	end
-end
-
-function isPointInObject(point, object)
-	if getPointObject(point) == object then return true
-	else return false
-	end
-end
-
-function getPointObject(point)
-	local obj = 0
-
-	for i, v in pairs(ObjectTable) do
-		if v.Finish ~= nil then
-			
-			--print(point, type(point), v.Start, v.Finish)
-			if point > v.Start and point <= v.Finish then
-				obj = i
-				break
-			else
-				obj = false
-			end
-		end
-	end
-	return obj
-end
-
-function destroyObject(objectID)
-
-	--if not tonumber(ObjectTable[objectID].Start+1) then return false end
-	if not tonumber(ObjectTable[objectID].Finish) then return false end
-
-	for i = ObjectTable[objectID].Start+1, ObjectTable[objectID].Finish do
-		SavePainted[i] = nil
 	end
 
-	ObjectTable[objectID] = nil
-	paint:Clear()	
-	reRendering()
+	PreviousZoom = perc
 
 end

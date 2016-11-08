@@ -561,6 +561,21 @@ function rePosScroll(element, topbot)
 	end
 end
 
+function setScrollPosition(element, percV, percH)
+
+	local w = getSize(element.HScroll.bk:GetSize()) 
+	local _, h = getSize(element.VScroll.bk:GetSize()) 
+	w, h = w-60, h-60
+
+	if percV ~= nil and percV <= 100 and percV >= 0 then
+		setPosition(element.VScroll.sl, 1, (percV/100)*h)
+	end
+	if percH ~= nil and percH <= 100 and percH >= 0 then
+		setPosition(element.HScroll.sl, (percH/100)*w, 1)
+	end
+
+end
+
 function addObjectOnPane(object, pane)
 	local x, y = getPositions(object)
 	local w, h = getSize(object:GetSize())
@@ -806,7 +821,7 @@ function addEvent(element, name, funct, key)
 	--Получаем номер события через название
 	name = getEventID(name, key)
 
-	if tostring(name) == "onMenu" or getType(element) == "coldiag" then id = key end	
+	if savedName == "onMenu" or getType(element) == "coldiag" then id = key end	
 	if tostring(name) == "onMouseDown" or tostring(name) == "onMouseUp" or tostring(name) == "onMouseDoubleClick" or tostring(name) == "onResize" then
 		if not key then key = "all" end
 	end
@@ -814,14 +829,20 @@ function addEvent(element, name, funct, key)
 
 	if tostring(name) == "onMouseDown" or tostring(name) == "onMouseUp" or tostring(name) == "onMouseDoubleClick" then
 
-		element:Connect(id, tableOfEvents[name].right, function(evt) funct(evt, "right") end)
-		element:Connect(id, tableOfEvents[name].middle, function(evt) funct(evt, "middle") end)
+		element:Connect(id, tableOfEvents[name].right, function(evt) 
+			funct(evt, "right") 
+		end)
+		element:Connect(id, tableOfEvents[name].middle, function(evt) 
+			funct(evt, "middle") 
+		end)
 
 		name = tableOfEvents[name].left
 
 	elseif tostring(name) == "onResize" then
 
-		element:Connect(id, tableOfEvents[name].max, function(evt) funct(evt, "max") end)
+		element:Connect(id, tableOfEvents[name].max, function(evt) 
+			funct(evt, "max") 
+		end)
 		name = tableOfEvents[name].resize
 
 	end
@@ -832,7 +853,8 @@ function addEvent(element, name, funct, key)
 		return false 
 	end
 
-	local evs = savedName == "onResize" and "max" or "left"
+	local evs = savedName == "onResize" and "resize" or "left"
+
 	element:Connect(id, tonumber(name), function(evt) 
 		
 		if savedName == "onWheel" then 
@@ -846,6 +868,7 @@ function addEvent(element, name, funct, key)
 	end)
 	
 	if funTab[element] == nil then funTab[element] = {} end
+
 	funTab[element][name] = funct
 	--print("funTab["..tostring(element).."]["..name.."]")
 end

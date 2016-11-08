@@ -13,25 +13,25 @@ end
 
 function drawPixel(paint, ins)
 
-	local x, y = ins[1][1], ins[1][2]
+	local x, y = ins.old[1], ins.old[2]
 
-	paint:DrawPoint(ins[1][1], ins[1][2])
+	paint:DrawPoint(ins.old[1], ins.old[2])
 end
 function drawRectangle(paint, ins)
 
-	local x, y, w, h = getWidthed(ins[1][1], ins[1][2], ins[2][1], ins[2][2])
+	local x, y, w, h = getWidthed(ins.old[1], ins.old[2], ins.new[1], ins.new[2])
 
 	paint:DrawRectangle(x, y, w, h)
 end
 function drawEllipse(paint, ins)
 
-	local x, y, w, h = getWidthed(ins[1][1], ins[1][2], ins[2][1], ins[2][2])
+	local x, y, w, h = getWidthed(ins.old[1], ins.old[2], ins.new[1], ins.new[2])
 
 	paint:DrawEllipse(x, y, w, h)
 end
 function drawLine(paint, ins)
 
-	local x, y, ax, ay = ins[1][1], ins[1][2], ins[2][1], ins[2][2]
+	local x, y, ax, ay = ins.old[1], ins.old[2], ins.new[1], ins.new[2]
 
 	--print(x, y, ax, ay)
 
