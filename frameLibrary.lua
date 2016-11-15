@@ -75,7 +75,7 @@ function createFrame(x, y, w, h, title, style, parent)
 		tostring(title), 
 		wx.wxPoint(x, y) 	or wx.wxDefaultPosition, 
 		wx.wxSize(w, h) 	or wx.wxDefaultSize, 
-		style 				or wx.wxDefault_FRAME_STYLE
+		style 				or wx.wxDEFAULT_FRAME_STYLE
 	)
 	
 	--frame:Show(true)
@@ -601,6 +601,18 @@ function setPaneMinSizes(pane, w, h)
 	pane.MinW, pane.MinH = w, h
 
 	local aw, ah = getSize(pane.Back:GetSize())
+	local x, y = getPositions(pane)
+
+	print(x, aw, w, x+aw-w)
+	print(y, ah, h, y+ah-h)
+
+	if x+w < aw-10 then x = aw-10-w end
+	if y+h < ah-10 then y = ah-10-h end 
+	if x > 0 then x = 0 end
+	if y > 0 then y = 0 end
+
+	setPosition(pane, x, y)
+	setScrollPosition(pane, (y/(ah-h))*100, (x/(aw-w))*100 )
 
 	if aw-10 > w then aw = aw-10 else aw = pane.MinW end
 	if ah-10 > h then ah = ah-10 else ah = pane.MinH end

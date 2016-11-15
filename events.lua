@@ -3,22 +3,13 @@ local SavePainted 			= {}
 local FigureList = {}
 
 local IsDrawing 			= false	
-local IsMouseActive			= false	
 
 local CurrentToolSize = 1	
 local CurrentFigure = nil	
 
-local PercentZoomed = 100
+local ZoomPercent = 100
 
 local ObjectTable 	= {}		
-
-addEvent(SideButton.Mouse, "onMouseDown", function()
-	IsMouseActive = not IsMouseActive
-	setColor(SideButton.Mouse, IsMouseActive and "18C018" or "444444", "FFFFFF")
-end)
-addEvent(SideButton.Mouse, "onMouseLeave", function()
-	setColor(SideButton.Mouse, IsMouseActive and "18C018" or "444444", "FFFFFF")
-end)
 
 addEvent(PaintFrame, "onResize", function(evt, max)
 
@@ -89,8 +80,10 @@ addEvent(SpinSizer, "onMouseUp", function()
 end)
 
 addEvent(PaintFrame, "onKey", function(keys)
+	
+	if key == "ctrl" then print(true) reRendering() end
+
 	if isKeyPressed("ctrl") and getKey(keys) == "Z" then undo() end
-	if getKey(keys) == "M" then CurrentColour[1] = "6600FF" end
 
 	if isKeyPressed("ctrl") and isKeyPressed("shift") then 
 		local jk = getKey(keys)
@@ -123,10 +116,10 @@ function onMouseDown(evt, key)
 		IsPanelMoving = true
 		SavePanelCoordinate = {curX, curY, scrX, scrY}
 
+		return false
 	end
 
 	if not IsMouseActive then
-		if key == "middle" then return false end
 
 		IsLeftMouse = key == "left" and true or false
 
@@ -138,10 +131,15 @@ function onMouseDown(evt, key)
 		CurrentFigure.Tool = CurrentTool
 		CurrentFigure.PenColor = CurrentColour[IsLeftMouse and 1 or 2]
 		CurrentFigure.BrushColor = CurrentColour[IsLeftMouse and 2 or 1]
-		CurrentFigure.BrushSize = CurrentToolSize*(PercentZoomed/100)
+		CurrentFigure.BrushSize = CurrentToolSize*(ZoomPercent/100)
 		
 		executeEvent(PaintPanel, "onMouseMove", evt) 
+	else
+		if key == "left" then
+			onMouseDown(evt, "middle")
+		end
 	end
+
 end
 
 function onMouseUp(evt, key)
@@ -193,7 +191,7 @@ function onMouseMove(evt)
 			reRendering()
 
 			setPaintBrush(paint, CurrentColour[ IsLeftMouse and 2 or 1])			--Установка кисти
-			setPaintPen(paint, CurrentColour[ IsLeftMouse and 1 or 2], CurrentToolSize*(PercentZoomed/100))
+			setPaintPen(paint, CurrentColour[ IsLeftMouse and 1 or 2], CurrentToolSize*(ZoomPercent/100))
 			CurrentTool.Draw(paint, {old = SavingCoordinates, new = {getEventPositions(evt)}})
 
 		end
@@ -239,15 +237,38 @@ addEvent(SpinScale, "onMouseUp", function()
 
 	zoomPic(getText(SpinScale))
 
-	for _, v in pairs(Figures) do
-		v.Tool:DrawFigure(paint, v)
-	end
-
 end)
 addEvent(SpinScale, "onMouseLeave", function()
 
 	reRendering()
 
+end)
+
+addEvent(SideButton.Mouse, "onMouseDown", function()
+	IsMouseActive = not IsMouseActive
+	setColor(SideButton.Mouse, IsMouseActive and "18C018" or "444444", "FFFFFF")
+end)
+addEvent(SideButton.Mouse, "onMouseLeave", function()
+	setColor(SideButton.Mouse, IsMouseActive and "18C018" or "444444", "FFFFFF")
+end)
+
+addEvent(ScrollPane, "onWheel", function(evt, dir)
+	
+	if isKeyPressed("ctrl") then
+		if dir == "up" then
+			setText( SpinScale, getText(SpinScale) + 5 )
+			zoomPic(getText(SpinScale))
+		else
+			setText( SpinScale, getText(SpinScale) - 5 )
+			zoomPic(getText(SpinScale))
+
+		end
+
+	else
+
+		reRendering()
+
+	end
 end)
 
 
@@ -273,7 +294,7 @@ addEvent(PaintFrame, "onMenu", undo, idUndo)
 local PreviousZoom = 1
 function zoomPic(perc)
 
-	PercentZoomed = perc
+	ZoomPercent = perc
 	perc = perc/100
 
 	local newX, newY = getPositions(resizer)
@@ -291,8 +312,6 @@ function zoomPic(perc)
 
 		v.BrushSize = math.floor((v.BrushSize/PreviousZoom)*perc * 100) / 100
 		--print("Brush "..v.BrushSize)
-
-		reRendering()
 	end
 
 	PreviousZoom = perc

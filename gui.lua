@@ -1,4 +1,5 @@
 iconDir 		= APPDIR.."icons/logo.png"
+IsMouseActive	= false	
 
 PaintFrame 		= createFrame(10, 10, 640, 480, "Графический редактор", "full")
 PaintFrame:Show()
@@ -54,8 +55,11 @@ for i, v in pairs(ToolRegistry) do
 		setColor(SideButton[i], "C01818", "FFFFFF")
 	end)
 	addEvent(SideButton[i], "onMouseLeave", function()
-		setColor(SideButton[i], CurrentTool == v and "18C018" or "444444", "FFFFFF")
+		local color = "444444"
+		if CurrentTool == v or ( i == "Mouse" and IsMouseActive) then color = "18C018" end
+		setColor(SideButton[i], color, "FFFFFF")
 	end)
+
 	addEvent(SideButton[i], "onMouseUp", function()
 		if i ~= "Mouse" then
 			setCurrentTool(v)
